@@ -1,0 +1,10 @@
+{
+  "name": "hover",
+  "reward": "hover",
+  "wrapper_kwargs": {},
+  "steps": 1000000,
+  "seed": 0,
+  "n_envs": 16,
+  "wall_clock_seconds": 650.5,
+  "model": "models/hover.zip"
+}

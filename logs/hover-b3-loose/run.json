@@ -1,0 +1,14 @@
+{
+  "name": "hover-b3-loose",
+  "reward": "hover",
+  "wrapper_kwargs": {
+    "bonus": 3.0,
+    "max_tilt": 0.2,
+    "max_speed": 0.3
+  },
+  "steps": 1000000,
+  "seed": 0,
+  "n_envs": 16,
+  "wall_clock_seconds": 860.0,
+  "model": "models/hover-b3-loose.zip"
+}

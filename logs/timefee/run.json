@@ -1,0 +1,10 @@
+{
+  "name": "timefee",
+  "reward": "timefee",
+  "wrapper_kwargs": {},
+  "steps": 1000000,
+  "seed": 0,
+  "n_envs": 16,
+  "wall_clock_seconds": 577.6,
+  "model": "models/timefee.zip"
+}

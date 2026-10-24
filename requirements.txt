@@ -1,0 +1,8 @@
+# Python 3.10+ (this project was built and run on 3.12).
+# Box2D ships arm64/x86_64 wheels now, so no swig install is needed; if your
+# platform has no wheel and pip tries to compile, install swig first.
+gymnasium[box2d]==1.4.0
+stable-baselines3==2.9.0
+imageio==2.38.1
+imageio-ffmpeg==0.6.0
+matplotlib

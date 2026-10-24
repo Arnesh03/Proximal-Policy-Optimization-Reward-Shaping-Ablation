@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+
+# generated: build_site.py writes these
+ui/_local.html
+
+# training noise; the progress.csv and run.json in each run are kept
+logs/*/monitor/
+logs/*/best/
+logs/*.log
+
+.DS_Store

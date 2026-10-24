@@ -1,0 +1,12 @@
+{
+  "name": "hover-fixed",
+  "reward": "hover-fixed",
+  "wrapper_kwargs": {
+    "gamma": 0.999
+  },
+  "steps": 1000000,
+  "seed": 0,
+  "n_envs": 16,
+  "wall_clock_seconds": 489.9,
+  "model": "models/hover-fixed.zip"
+}

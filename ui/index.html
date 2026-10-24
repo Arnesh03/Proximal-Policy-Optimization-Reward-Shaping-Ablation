@@ -1,0 +1,1923 @@
+<title>What the Lander Was Paid</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+/* Layout: a flight console &mdash; viewport left, instrument stack right, the
+   score divergence running full width underneath. Stacks to one column
+   on a phone. Dark-first, because the subject is a night landing. */
+:root {
+  --bg:      #0d1318;
+  --panel:   #141d25;
+  --panel-2: #1a242d;
+  --line:    #253341;
+  --fg:      #e4ebf1;
+  --muted:   #8898a6;
+  --faint:   #5d6b78;
+
+  --true:    #43bda2;   /* the honest score */
+  --paid:    #e6a23c;   /* what training actually paid */
+  --alarm:   #e2574c;   /* the gap between them */
+  --craft:   #9a93e0;
+  --flame:   #ff9a4d;
+  --ground:  #e8edf2;
+
+  --display: "Chivo", "Helvetica Neue", Arial, sans-serif;
+  --sans:    "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:      #e9edf0;
+    --panel:   #ffffff;
+    --panel-2: #f2f5f8;
+    --line:    #d3dae1;
+    --fg:      #121a21;
+    --muted:   #5a6873;
+    --faint:   #8795a1;
+    --true:    #0f8d76;
+    --paid:    #b4730c;
+    --alarm:   #c6372c;
+    --craft:   #6b62c4;
+    --flame:   #e2690f;
+    --ground:  #2b3640;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:      #e9edf0;
+  --panel:   #ffffff;
+  --panel-2: #f2f5f8;
+  --line:    #d3dae1;
+  --fg:      #121a21;
+  --muted:   #5a6873;
+  --faint:   #8795a1;
+  --true:    #0f8d76;
+  --paid:    #b4730c;
+  --alarm:   #c6372c;
+  --craft:   #6b62c4;
+  --flame:   #e2690f;
+  --ground:  #2b3640;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+/* class rules below set `display`, which would otherwise outrank the
+   user-agent's [hidden] rule and leave el.hidden doing nothing */
+[hidden] { display: none !important; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 44px;
+}
+
+.wrap { max-width: 1140px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+/* ---------- header ---------- */
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--faint);
+}
+h1 {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(27px, 5.2vw, 44px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+.standfirst { color: var(--muted); max-width: 62ch; margin: 0; }
+.standfirst b { color: var(--fg); font-weight: 600; }
+
+/* ---------- clip selector ---------- */
+.clips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 760px) { .clips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.clip {
+  display: flex; flex-direction: column; gap: 5px;
+  min-width: 0;
+  text-align: left;
+  padding: 11px 13px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.clip:hover { border-color: var(--faint); }
+.clip:focus-visible { outline: 2px solid var(--paid); outline-offset: 2px; }
+.clip[aria-pressed="true"] { background: var(--panel-2); border-color: var(--fg); color: var(--fg); }
+.clip-name { font-weight: 600; font-size: 13.5px; line-height: 1.25; color: var(--fg); }
+.clip-stat { font-family: var(--mono); font-size: 11.5px; letter-spacing: -0.01em; }
+.clip-stat .ok { color: var(--true); }
+.clip-stat .bad { color: var(--alarm); }
+
+/* ---------- console grid ---------- */
+.console {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(250px, 0.85fr);
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 880px) { .console { grid-template-columns: minmax(0, 1fr); } }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  min-width: 0;
+}
+.panel-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--line);
+}
+.panel-title {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint);
+}
+.panel-note { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+
+/* ---------- stage ---------- */
+.stage { position: relative; }
+#view { display: block; width: 100%; aspect-ratio: 3 / 2; max-width: 100%; border-radius: 0 0 9px 9px; }
+.stage-flag {
+  position: absolute; top: 56px; left: 13px;
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 9px;
+  background: color-mix(in srgb, var(--alarm) 16%, var(--panel));
+  border: 1px solid var(--alarm);
+  border-radius: 999px;
+  font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--alarm);
+}
+.stage-flag::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--alarm); animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .25 } }
+@media (prefers-reduced-motion: reduce) { .stage-flag::before { animation: none } }
+
+.loading {
+  display: grid; place-items: center;
+  aspect-ratio: 3 / 2;
+  font-family: var(--mono); font-size: 12px; color: var(--faint);
+  text-align: center;
+  padding: 16px;
+}
+
+/* ---------- transport ---------- */
+.transport {
+  display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+  padding: 11px 13px;
+  border-top: 1px solid var(--line);
+}
+button.ctl {
+  font: 500 13px/1 var(--sans);
+  padding: 8px 14px;
+  background: var(--panel-2);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 74px;
+}
+button.ctl:hover { border-color: var(--faint); }
+button.ctl:focus-visible { outline: 2px solid var(--paid); outline-offset: 2px; }
+.scrub-wrap { flex: 1 1 180px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--paid); height: 22px; }
+input[type="range"]:focus-visible { outline: 2px solid var(--paid); outline-offset: 3px; }
+.frame-read {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.speeds { display: flex; gap: 4px; }
+.speed, .toggle {
+  font-family: var(--mono); font-size: 11.5px; font-weight: 500;
+  padding: 6px 9px; min-width: 38px;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 5px; cursor: pointer;
+}
+.speed[aria-pressed="true"], .toggle[aria-pressed="true"] {
+  background: var(--panel-2); color: var(--fg); border-color: var(--fg);
+}
+.speed:focus-visible, .toggle:focus-visible { outline: 2px solid var(--paid); outline-offset: 2px; }
+.toggle { min-width: 0; padding-inline: 11px; }
+
+.ghost-toggle {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--muted); cursor: pointer;
+  padding: 11px 13px; border-top: 1px solid var(--line);
+}
+.ghost-toggle input { accent-color: var(--craft); width: 15px; height: 15px; }
+.ghost-toggle:has(input:focus-visible) { outline: 2px solid var(--paid); outline-offset: -2px; }
+
+/* ---------- scoreboard ---------- */
+.scores { display: flex; flex-direction: column; }
+.score-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--line);
+}
+.score-label {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  line-height: 1.35;
+}
+.score-label small { display: block; letter-spacing: 0; text-transform: none; color: var(--faint); font-size: 10.5px; }
+.score-value {
+  font-family: var(--display); font-weight: 700;
+  font-size: 27px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.row-true .score-label { color: var(--true); }
+.row-true .score-value { color: var(--true); }
+.row-paid .score-label { color: var(--paid); }
+.row-paid .score-value { color: var(--paid); }
+.row-gap { background: var(--panel-2); border-bottom: none; border-radius: 0 0 9px 9px; }
+.row-gap .score-label { color: var(--muted); }
+.row-gap .score-value { font-size: 22px; color: var(--muted); }
+.row-gap.hot .score-label, .row-gap.hot .score-value { color: var(--alarm); }
+
+/* ---------- telemetry ---------- */
+.telemetry { display: flex; flex-direction: column; }
+.tel {
+  display: grid;
+  grid-template-columns: 1fr 62px 54px;
+  align-items: center; gap: 9px;
+  padding: 6px 13px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.tel:last-child { border-bottom: none; }
+.tel-name { font-size: 12.5px; color: var(--muted); min-width: 0; }
+.tel-name span { color: var(--faint); font-family: var(--mono); font-size: 10.5px; }
+.tel-val {
+  font-family: var(--mono); font-size: 12.5px; font-weight: 500;
+  font-variant-numeric: tabular-nums; text-align: right; color: var(--fg);
+}
+.gauge { position: relative; height: 4px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
+.gauge i { position: absolute; top: 0; bottom: 0; background: var(--craft); border-radius: 2px; }
+.gauge.center::after {
+  content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px;
+  width: 1px; background: var(--line);
+}
+.pill {
+  justify-self: end;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--panel-2); color: var(--faint);
+  border: 1px solid var(--line);
+}
+.pill.on { background: color-mix(in srgb, var(--true) 20%, var(--panel)); color: var(--true); border-color: var(--true); }
+
+.thrust { display: flex; gap: 5px; padding: 10px 13px; border-top: 1px solid var(--line); }
+.jet {
+  flex: 1 1 0; min-width: 0;
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.04em; text-align: center;
+  padding: 5px 2px; border-radius: 4px;
+  background: var(--panel-2); color: var(--faint);
+  border: 1px solid var(--line);
+  transition: background .08s, color .08s, border-color .08s;
+}
+.jet.lit { background: color-mix(in srgb, var(--flame) 24%, var(--panel)); color: var(--flame); border-color: var(--flame); }
+
+/* ---------- divergence chart ---------- */
+#chart { display: block; width: 100%; height: 190px; max-width: 100%; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.legend b { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+.swatch { width: 14px; height: 2px; border-radius: 1px; }
+
+/* ---------- hero ---------- */
+.hero { max-width: 1140px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding-block: 18px 8px; }
+.hero h1 {
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(42px, 10.5vw, 118px); line-height: 0.92;
+  letter-spacing: -0.038em; margin: 0; text-wrap: balance;
+}
+.lede {
+  font-size: clamp(16px, 2.1vw, 23px); font-weight: 300; line-height: 1.45;
+  color: var(--muted); max-width: 46ch; margin: 0;
+}
+.lede b { color: var(--fg); font-weight: 600; }
+.hero-stage {
+  border: 1px solid var(--line); border-radius: 13px;
+  overflow: hidden; background: var(--panel);
+}
+#hero-canvas { display: block; width: 100%; height: clamp(250px, 46svh, 470px); }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 620px) { .tiles { grid-template-columns: 1fr; } }
+.tile {
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  padding: 13px 16px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.tile b {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(27px, 4.6vw, 42px); line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--true);
+}
+.tile span { font-size: 12px; color: var(--muted); }
+.tile.alarm b { color: var(--alarm); }
+.tile.paid b { color: var(--paid); }
+
+/* ---------- scroll-scrubbed scenes ---------- */
+.scene { position: relative; }
+.scene-track { position: relative; height: calc((var(--beats) + 1) * 100svh); }
+.scene-stage {
+  position: sticky; top: env(safe-area-inset-top, 0px);
+  height: 100svh; max-width: 1140px; margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: center; gap: 15px;
+  padding-block: 16px;
+}
+.scene-canvas {
+  display: block; width: 100%; min-width: 0;
+  height: clamp(230px, 50svh, 540px);
+  background: var(--panel);
+  border: 1px solid var(--line); border-radius: 13px;
+}
+.scene-copy { display: flex; flex-direction: column; gap: 7px; max-width: 48ch; }
+.beat-kicker {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--paid); margin: 0;
+}
+.beat-title {
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(27px, 5.4vw, 56px); line-height: 1.02;
+  letter-spacing: -0.03em; margin: 0; text-wrap: balance;
+}
+.beat-body { font-size: clamp(14px, 1.7vw, 17.5px); color: var(--muted); margin: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .beat-swap { animation: beatIn .42s cubic-bezier(.22,.7,.3,1) both; }
+}
+@keyframes beatIn { from { opacity: .35; transform: translateY(9px) } to { opacity: 1; transform: none } }
+.scene-progress { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.scene-progress i { display: block; height: 100%; background: var(--paid); transform: scaleX(0); transform-origin: left; }
+
+.counters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.counter {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+}
+.counter span {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint);
+}
+.counter b {
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(30px, 6.6vw, 68px); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.counter.c-true b { color: var(--true); }
+.counter.c-paid b { color: var(--paid); }
+
+/* ---------- editorial bands ---------- */
+.band { max-width: 1140px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding-block: 68px 20px; }
+.band h2 {
+  font-family: var(--display); font-weight: 900;
+  font-size: clamp(27px, 5vw, 54px); line-height: 1.03;
+  letter-spacing: -0.03em; margin: 0; text-wrap: balance;
+}
+.band p { margin: 0; color: var(--muted); max-width: 54ch; font-size: clamp(14px, 1.7vw, 17.5px); }
+.formula {
+  font-family: var(--mono); font-size: clamp(12px, 1.8vw, 17px); line-height: 2;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
+  padding: 18px 20px; overflow-x: auto; color: var(--fg);
+}
+.formula em { font-style: normal; color: var(--paid); }
+.formula s { text-decoration: none; color: var(--faint); }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 760px) { .compare-grid { grid-template-columns: 1fr; } }
+.cmp { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cmp canvas {
+  display: block; width: 100%;
+  height: clamp(190px, 31svh, 310px);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
+}
+.cmp-label { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.cmp-label strong { font-size: 14px; font-weight: 600; }
+.cmp-label span { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ---------- mode tabs ---------- */
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.mode {
+  font: 600 13px/1 var(--sans);
+  padding: 10px 16px;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 7px; cursor: pointer;
+}
+.mode[aria-selected="true"] { background: var(--panel-2); color: var(--fg); border-color: var(--fg); }
+.mode:focus-visible { outline: 2px solid var(--paid); outline-offset: 2px; }
+
+.section-label {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint);
+  margin-top: -6px;
+}
+
+.group {
+  display: flex; align-items: center; gap: 11px;
+  flex: 1 1 auto; flex-wrap: wrap; min-width: 0;
+}
+
+.jetbtn {
+  font: 500 12px/1 var(--mono);
+  padding: 9px 13px;
+  background: var(--panel-2); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 6px;
+  cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.jetbtn.lit {
+  background: color-mix(in srgb, var(--flame) 24%, var(--panel));
+  color: var(--flame); border-color: var(--flame);
+}
+.jetbtn:focus-visible { outline: 2px solid var(--paid); outline-offset: 2px; }
+
+.hint { margin: 0; padding: 0 13px 12px; font-size: 12px; color: var(--faint); }
+.hint kbd {
+  font: 500 11px/1 var(--mono);
+  padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--panel-2); color: var(--muted);
+}
+
+/* ---------- end-of-flight card ---------- */
+.result {
+  position: absolute; left: 0; right: 0; top: 44px;
+  display: flex; justify-content: center;
+  padding: 24px 16px; pointer-events: none;
+}
+.result-card {
+  pointer-events: auto;
+  display: flex; flex-direction: column; gap: 12px;
+  min-width: 232px; max-width: 320px;
+  padding: 16px 18px;
+  background: var(--panel);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.result-outcome {
+  font-family: var(--display); font-weight: 700; font-size: 21px;
+  margin: 0; line-height: 1.1;
+}
+.result-outcome.good { color: var(--true); }
+.result-outcome.bad { color: var(--alarm); }
+.result-rows { display: flex; flex-direction: column; gap: 6px; }
+.result-rows div {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 12.5px; color: var(--muted);
+}
+.result-rows b {
+  font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--fg);
+}
+
+/* ---------- footnote ---------- */
+.notes {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;
+  padding-top: 4px;
+}
+.note { font-size: 13px; color: var(--muted); min-width: 0; }
+.note h3 {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.11em; text-transform: uppercase; color: var(--faint);
+  margin: 0 0 5px;
+}
+.note code {
+  font-family: var(--mono); font-size: 12px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 5px; color: var(--fg);
+}
+</style>
+
+<section class="hero">
+  <p class="eyebrow">Gymnasium LunarLander-v3 &middot; PPO &middot; 1,000,000 frames each</p>
+  <h1>What the Lander Was Paid</h1>
+  <p class="lede">
+    Four agents, same game, same physics, four reward functions. Each flies exactly as it was
+    trained to. One was paid <b>+3 a frame for being upright and slow</b> &mdash; which sounds like
+    what you want, right up until you watch it.
+  </p>
+  <div class="hero-stage"><canvas id="hero-canvas"></canvas></div>
+  <div class="tiles">
+    <div class="tile"><b>259</b><span>Baseline agent, true score over 20 episodes</span></div>
+    <div class="tile alarm"><b>&minus;102</b><span>Hacked agent, true score. Worse than doing nothing</span></div>
+    <div class="tile paid"><b>+684</b><span>What that same hacked agent was paid</span></div>
+  </div>
+</section>
+
+<section class="scene" id="scene-descent" data-clip="baseline" style="--beats: 4">
+  <div class="scene-track">
+    <div class="scene-stage">
+      <canvas class="scene-canvas"></canvas>
+      <div class="scene-copy">
+        <p class="beat-kicker">01 &mdash; The descent</p>
+        <h2 class="beat-title">Eight numbers.</h2>
+        <p class="beat-body">It never sees the picture.</p>
+      </div>
+      <div class="scene-progress"><i></i></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <h2>The reward pays the change, not the position</h2>
+  <p>
+    Each frame the game works out a &ldquo;how good is this&rdquo; number, and the frame&rsquo;s reward
+    is how much that number <em>improved</em> since the last frame, minus fuel. Sitting still
+    earns nothing, however nice the spot. That detail is the whole ballgame.
+  </p>
+  <div class="formula">
+    score&nbsp;=&nbsp;&minus;100&nbsp;&times;&nbsp;distance&nbsp;&minus;&nbsp;100&nbsp;&times;&nbsp;speed&nbsp;&minus;&nbsp;100&nbsp;&times;&nbsp;|tilt|&nbsp;+&nbsp;10&nbsp;&times;&nbsp;legs&nbsp;down<br>
+    reward&nbsp;=&nbsp;<em>score&nbsp;&minus;&nbsp;previous&nbsp;score</em>&nbsp;&minus;&nbsp;fuel&nbsp;(0.30&nbsp;main,&nbsp;0.03&nbsp;side)<br>
+    last&nbsp;frame&nbsp;=&nbsp;<em>+100</em>&nbsp;at&nbsp;rest,&nbsp;or&nbsp;<em>&minus;100</em>&nbsp;for&nbsp;a&nbsp;crash
+  </div>
+</section>
+
+<section class="scene" id="scene-trap" data-clip="hacked" style="--beats: 4">
+  <div class="scene-track">
+    <div class="scene-stage">
+      <canvas class="scene-canvas"></canvas>
+      <div class="counters">
+        <div class="counter c-true"><span>Actually flown</span><b data-cnt="true">0</b></div>
+        <div class="counter c-paid"><span>Paid</span><b data-cnt="paid">0</b></div>
+      </div>
+      <div class="scene-copy">
+        <p class="beat-kicker">02 &mdash; The trap</p>
+        <h2 class="beat-title">One extra rule.</h2>
+        <p class="beat-body">Plus three a frame for being upright and slow.</p>
+      </div>
+      <div class="scene-progress"><i></i></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <h2>Same seed, same ground, same thousand frames</h2>
+  <p>Left: paid the built-in reward. Right: paid three a frame for holding still.</p>
+  <div class="compare-grid">
+    <div class="cmp">
+      <canvas id="cmp-a"></canvas>
+      <div class="cmp-label"><strong>Built-in reward</strong><span id="cmp-a-score">&mdash;</span></div>
+    </div>
+    <div class="cmp">
+      <canvas id="cmp-b"></canvas>
+      <div class="cmp-label"><strong>+3 a frame, upright &amp; slow</strong><span id="cmp-b-score">&mdash;</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <h2 class="band-head" style="font-family:var(--display);font-weight:900;font-size:clamp(26px,4.6vw,48px);line-height:1.04;letter-spacing:-0.03em;margin:34px 0 0;text-wrap:balance">Take the controls</h2>
+
+  <div class="modes" role="tablist" aria-label="Mode">
+    <button class="mode" id="mode-replay" type="button" role="tab" aria-selected="true">Watch the agents</button>
+    <button class="mode" id="mode-fly" type="button" role="tab" aria-selected="false">Fly it yourself</button>
+  </div>
+
+  <div class="section-label" id="chips-label">The four agents</div>
+  <div class="clips" id="clips" role="group" aria-label="Reward function"></div>
+
+  <div class="console">
+    <div class="panel stage">
+      <div class="panel-head">
+        <span class="panel-title">Viewport</span>
+        <span class="panel-note" id="stage-note">&mdash;</span>
+      </div>
+      <div id="loading" class="loading">Loading flight data&hellip;</div>
+      <canvas id="view" hidden></canvas>
+      <div class="stage-flag" id="flag" hidden>never lands</div>
+
+      <div class="result" id="result" hidden>
+        <div class="result-card">
+          <p class="result-outcome" id="result-outcome">Landed.</p>
+          <div class="result-rows">
+            <div><span>Your true score</span><b id="result-true">0</b></div>
+            <div><span>You were paid</span><b id="result-paid">0</b></div>
+            <div><span id="result-agent-label">PPO on this reward</span><b id="result-agent">0</b></div>
+          </div>
+          <button class="ctl" id="result-again" type="button">Fly again</button>
+        </div>
+      </div>
+
+      <div class="transport">
+        <span class="group" id="replay-controls">
+          <button class="ctl" id="play" type="button">Pause</button>
+          <div class="scrub-wrap">
+            <input type="range" id="scrub" min="0" max="100" value="0" step="1" aria-label="Frame">
+            <span class="frame-read" id="frame-read">0 / 0</span>
+          </div>
+          <div class="speeds" role="group" aria-label="Playback speed">
+            <button class="speed" type="button" data-speed="0.5">0.5&times;</button>
+            <button class="speed" type="button" data-speed="1" aria-pressed="true">1&times;</button>
+            <button class="speed" type="button" data-speed="3">3&times;</button>
+          </div>
+        </span>
+        <span class="group" id="fly-controls" hidden>
+          <button class="ctl" id="restart" type="button">Restart</button>
+          <span class="speeds" role="group" aria-label="Engines">
+            <button class="jetbtn" id="jet-1" type="button" data-a="1">&larr;</button>
+            <button class="jetbtn" id="jet-2" type="button" data-a="2">&uarr; main</button>
+            <button class="jetbtn" id="jet-3" type="button" data-a="3">&rarr;</button>
+          </span>
+          <span class="frame-read" id="fly-read">0 / 1000</span>
+        </span>
+        <button class="toggle" type="button" id="zoom" aria-pressed="false">Follow</button>
+      </div>
+
+      <p class="hint" id="hint" hidden>
+        <kbd>&uarr;</kbd> main &middot; <kbd>&larr;</kbd><kbd>&rarr;</kbd> side engines &middot;
+        <kbd>R</kbd> restart. One engine per frame &mdash; the same single choice the agent gets.
+      </p>
+
+      <label class="ghost-toggle" id="ghost-wrap" hidden>
+        <input type="checkbox" id="ghost">
+        Overlay the built-in-reward run at the same frame
+      </label>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="panel scores">
+        <div class="panel-head">
+          <span class="panel-title">Score so far</span>
+          <span class="panel-note">cumulative</span>
+        </div>
+        <div class="score-row row-true">
+          <span class="score-label">True<small>the game's own reward</small></span>
+          <span class="score-value" id="v-true">0</span>
+        </div>
+        <div class="score-row row-paid">
+          <span class="score-label">Paid<small>what training optimised</small></span>
+          <span class="score-value" id="v-paid">0</span>
+        </div>
+        <div class="score-row row-gap" id="gap-row">
+          <span class="score-label">Gap<small>flattery</small></span>
+          <span class="score-value" id="v-gap">0</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Observation</span>
+          <span class="panel-note">8 floats, 50 Hz</span>
+        </div>
+        <div class="telemetry" id="telemetry"></div>
+        <div class="thrust" id="thrust">
+          <span class="jet" data-a="0">COAST</span>
+          <span class="jet" data-a="1">LEFT</span>
+          <span class="jet" data-a="2">MAIN</span>
+          <span class="jet" data-a="3">RIGHT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Reward over the episode</span>
+      <div class="legend">
+        <b><i class="swatch" style="background:var(--true)"></i>true</b>
+        <b><i class="swatch" style="background:var(--paid)"></i>paid</b>
+      </div>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h3>Why hovering pays</h3>
+      An episode is cut off at 1,000 frames. A bonus of +3 a frame is worth up to 3,000,
+      while the main engine costs 0.30 a frame. Landing <em>ends</em> the episode and stops
+      the payments, so the rocket learns to stop and hang there.
+    </div>
+    <div class="note">
+      <h3>The fix</h3>
+      Pay the <em>change</em> in uprightness, <code>&gamma;&middot;&phi;(s&prime;) &minus; &phi;(s)</code>, the way the built-in
+      reward already pays the change in position &mdash; plus a small fee per frame. A closed loop
+      nets to zero, so waiting earns nothing.
+    </div>
+    <div class="note">
+      <h3>Reading the numbers</h3>
+      Positions are relative to the pad, tilt is in radians, and the last two are leg contact
+      flags. The agent never sees the picture &mdash; only these eight numbers.
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/planck@1.5.0/dist/planck.min.js"></script>
+<script src="craft3d.js"></script>
+<script src="sim.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var TEL = [
+    { key: 0, name: "x", desc: "left / right of pad", range: 1, center: true },
+    { key: 1, name: "y", desc: "height above pad",    range: 1.6, center: false },
+    { key: 2, name: "vx", desc: "sideways speed",     range: 2, center: true },
+    { key: 3, name: "vy", desc: "up / down speed",    range: 2, center: true },
+    { key: 4, name: "angle", desc: "tilt, radians",   range: 1, center: true },
+    { key: 5, name: "omega", desc: "spin rate",       range: 2, center: true },
+    { key: 6, name: "leg 1", desc: "left leg down",   flag: true },
+    { key: 7, name: "leg 2", desc: "right leg down",  flag: true }
+  ];
+  var ORDER = ["baseline", "timefee", "hacked", "fixed"];
+
+  var data = null, key = "baseline", frame = 0, playing = true, speed = 1,
+      ghost = false, zoom = false;
+  // hand-flying
+  var mode = "replay", rewardKey = "baseline";
+  var sim = null, flyClip = null, flying = false;
+  var held = { main: false, left: false, right: false };
+  var AGENT_FOR = { baseline: "baseline", timefee: "timefee",
+                    hover: "hacked", "hover-fixed": "fixed" };
+  var view = document.getElementById("view");
+  var chart = document.getElementById("chart");
+  var vctx = view.getContext("2d");
+  var cctx = chart.getContext("2d");
+  var rows = [];
+
+  function css(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function clip() { return mode === "fly" ? flyClip : data.clips[key]; }
+  function nFrames() { return clip().frames.length; }
+
+  /* ---------- telemetry rows ---------- */
+  (function buildTelemetry() {
+    var host = document.getElementById("telemetry");
+    TEL.forEach(function (t) {
+      var row = document.createElement("div");
+      row.className = "tel";
+      var label = document.createElement("div");
+      label.className = "tel-name";
+      label.innerHTML = t.desc + " <span>" + t.name + "</span>";
+      row.appendChild(label);
+
+      if (t.flag) {
+        var spacer = document.createElement("div");
+        row.appendChild(spacer);
+        var pill = document.createElement("span");
+        pill.className = "pill";
+        pill.textContent = "UP";
+        row.appendChild(pill);
+        rows.push({ spec: t, pill: pill });
+      } else {
+        var val = document.createElement("div");
+        val.className = "tel-val";
+        val.textContent = "0.00";
+        row.appendChild(val);
+        var gauge = document.createElement("div");
+        gauge.className = "gauge" + (t.center ? " center" : "");
+        var fill = document.createElement("i");
+        gauge.appendChild(fill);
+        row.appendChild(gauge);
+        rows.push({ spec: t, val: val, fill: fill });
+      }
+      host.appendChild(row);
+    });
+  })();
+
+  /* ---------- clip buttons ---------- */
+  function buildClips() {
+    var host = document.getElementById("clips");
+    host.textContent = "";
+
+    if (mode === "fly") {
+      // in this mode the chips pick the reward function that scores YOU
+      Object.keys(SIM_REWARDS).forEach(function (rk) {
+        var b = document.createElement("button");
+        b.className = "clip";
+        b.type = "button";
+        b.setAttribute("aria-pressed", String(rk === rewardKey));
+        b.innerHTML = '<span class="clip-name">' + SIM_REWARDS[rk].label + "</span>" +
+          '<span class="clip-stat">PPO scored ' +
+          Math.round(data.clips[AGENT_FOR[rk]].trueReturn) + "</span>";
+        b.addEventListener("click", function () {
+          rewardKey = rk;
+          buildClips();
+          startFlight();
+        });
+        host.appendChild(b);
+      });
+      return;
+    }
+
+    ORDER.forEach(function (k) {
+      var c = data.clips[k];
+      if (!c) return;
+      var b = document.createElement("button");
+      b.className = "clip";
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(k === key));
+      var bad = c.trueReturn < 200;
+      b.innerHTML =
+        '<span class="clip-name">' + c.label + "</span>" +
+        '<span class="clip-stat">true <b class="' + (bad ? "bad" : "ok") + '">' +
+        Math.round(c.trueReturn) + "</b> \u00b7 paid " + Math.round(c.shapedReturn) + "</span>";
+      b.addEventListener("click", function () { select(k); });
+      host.appendChild(b);
+    });
+  }
+
+  function select(k) {
+    key = k;
+    frame = 0;
+    playing = true;
+    document.getElementById("play").textContent = "Pause";
+    Array.prototype.forEach.call(document.querySelectorAll(".clip"), function (b, i) {
+      b.setAttribute("aria-pressed", String(ORDER[i] === k));
+    });
+    var c = clip();
+    document.getElementById("scrub").max = String(nFrames() - 1);
+    document.getElementById("stage-note").textContent = c.blurb;
+    document.getElementById("flag").hidden = c.outcome !== "never lands";
+    document.getElementById("ghost-wrap").hidden = (k === "baseline");
+    resize();
+    drawChart();
+    render();
+  }
+
+  /* ---------- canvas sizing ---------- */
+  function fit(canvas, cssHeight) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = canvas.clientWidth || 600;
+    var h = cssHeight || canvas.clientHeight || 400;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: w, h: h };
+  }
+
+  function resize() {
+    if (heroView) fitAll();
+    consoleView.size = fit(view);
+    consoleView.bgKey = "";
+    drawChart();
+  }
+
+  /* ---------- world -> screen ---------- */
+  /* One scale for both axes, so the craft is never stretched. The world is
+     centred horizontally with its ground on the bottom edge, plus headroom
+     above: the lander starts at y 13.41, just over the world's nominal
+     13.33, and would otherwise be clipped off the top at frame zero. */
+  var HEADROOM = 1.35;
+
+  function frameGeom(size, k) {
+    var W = data.world[0], Hv = data.world[1] + HEADROOM;
+    var vw = size.w * k, vh = size.h * k;
+    var s = Math.min(vw / W, vh / Hv);
+    return { W: W, Hv: Hv, vw: vw, vh: vh, s: s,
+             offX: (vw - W * s) / 2, offY: vh - Hv * s };
+  }
+
+  function projector(size, cam) {
+    var k = cam ? cam.scale : 1, ox = cam ? cam.ox : 0, oy = cam ? cam.oy : 0;
+    var g = frameGeom(size, k);
+    return function (p) {
+      return [g.offX + p[0] * g.s - ox, g.offY + (g.Hv - p[1]) * g.s - oy];
+    };
+  }
+
+  /* Follow mode keeps the craft centred without letting the view leave the
+     world; the scenery is painted once at this scale and blitted per frame. */
+  function camera(size, f, k) {
+    if (k === 1) return { scale: 1, ox: 0, oy: 0 };
+    var g = frameGeom(size, k);
+    var bx = g.offX + f.p[0] * g.s;
+    var by = g.offY + (g.Hv - f.p[1]) * g.s;
+    return {
+      scale: k,
+      ox: Math.max(0, Math.min(g.vw - size.w, bx - size.w / 2)),
+      oy: Math.max(0, Math.min(g.vh - size.h, by - size.h / 2))
+    };
+  }
+
+  function poly(ctx, pts, proj) {
+    ctx.beginPath();
+    pts.forEach(function (p, i) {
+      var q = proj(p);
+      if (i === 0) ctx.moveTo(q[0], q[1]); else ctx.lineTo(q[0], q[1]);
+    });
+    ctx.closePath();
+  }
+
+  function centroid(pts) {
+    var x = 0, y = 0;
+    pts.forEach(function (p) { x += p[0]; y += p[1]; });
+    return [x / pts.length, y / pts.length];
+  }
+
+  /* ---------- deterministic noise, so the scenery never shimmers ---------- */
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* The viewport depicts a night landing, so its palette is fixed rather than
+     theme-aware; the panel around it still follows the page tokens. */
+  var SCENE = {
+    skyTop: "#04060b", skyMid: "#090f18", skyHorizon: "#16202c",
+    ridgeFar: "#1b232e", ridgeNear: "#2b3643",
+    litEdge: "#ffffff", regolith: "#cdd5dd", regolithMid: "#aab4bf",
+    regolithDeep: "#7c8794", regolithFoot: "#565f6b",
+    hullLit: "#cdc8f2", hull: "#9a93e0", hullShade: "#5c55a0", hullDeep: "#3a3570",
+    foilLit: "#f0c666", foil: "#c99a2e", foilShade: "#7d5c12",
+    metal: "#6b7482", metalDark: "#333a44", metalLit: "#9aa4b1",
+    glass: "#0e1823", glassLit: "#86d8ff",
+    earthOcean: "#1b4f8c", earthOceanLit: "#3f8fd4",
+    earthLand: "#3f7a4a", earthLandDry: "#8a7a4a", earthCloud: "#eaf2ff",
+    flame: "#ff8a2b", flameHot: "#ffd37a", flameCore: "#fff6e0",
+    dust: "#c9d2db"
+  };
+
+  // The physics hull in the lander's own frame (gym's LANDER_POLY / SCALE).
+  var HULL = [[-14, 17], [-17, 0], [-17, -10], [17, -10], [17, 0], [14, 17]]
+    .map(function (p) { return [p[0] / 30, p[1] / 30]; });
+
+  /* The body's own origin and axes, straight from the exported transform, so
+     art drawn in local coordinates sits and rotates exactly with the craft. */
+  function bodyFrame(f) {
+    var cos = Math.cos(f.t), sin = Math.sin(f.t);
+    return {
+      ox: f.p[0], oy: f.p[1],
+      rx: cos, ry: sin,     // the lander's +x
+      ux: -sin, uy: cos     // the lander's +y
+    };
+  }
+  function local(fr, x, y) {
+    return [fr.ox + x * fr.rx + y * fr.ux, fr.oy + x * fr.ry + y * fr.uy];
+  }
+
+  function terrainAt(ground, x) {
+    for (var i = 1; i < ground.length; i++) {
+      if (x <= ground[i][0]) {
+        var a = ground[i - 1], b = ground[i];
+        var t = (x - a[0]) / ((b[0] - a[0]) || 1);
+        return a[1] + t * (b[1] - a[1]);
+      }
+    }
+    return ground[ground.length - 1][1];
+  }
+
+  /* ---------- static scenery, painted once per clip and size ---------- */
+  function makeView(canvas) {
+    return {
+      canvas: canvas,
+      ctx: canvas.getContext("2d"),
+      bg: document.createElement("canvas"),
+      bgKey: "",
+      size: { w: 600, h: 400 }
+    };
+  }
+  var consoleView = makeView(view);
+
+  function buildBackground(view, c, size, scale) {
+    var k = Math.round(size.w) + "x" + Math.round(size.h) + "|" + scale;
+    if (k === view.bgKey) return;
+    view.bgKey = k;
+
+    // the whole world at this zoom, so any camera position is just a blit
+    var full = { w: size.w * scale, h: size.h * scale };
+    var dpr = Math.min(window.devicePixelRatio || 1, scale > 1 ? 1.5 : 2);
+    view.bg.width = Math.round(full.w * dpr);
+    view.bg.height = Math.round(full.h * dpr);
+    var g = view.bg.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var proj = projector(size, { scale: scale, ox: 0, oy: 0 });
+    var rand = rng(97);
+    size = full;
+
+    // sky
+    var sky = g.createLinearGradient(0, 0, 0, size.h);
+    sky.addColorStop(0, SCENE.skyTop);
+    sky.addColorStop(0.55, SCENE.skyMid);
+    sky.addColorStop(1, SCENE.skyHorizon);
+    g.fillStyle = sky;
+    g.fillRect(0, 0, size.w, size.h);
+
+    // a faint band of unresolved stars across the sky
+    g.save();
+    g.translate(size.w * 0.62, size.h * 0.16);
+    g.rotate(-0.42);
+    var band = g.createLinearGradient(0, -size.h * 0.17, 0, size.h * 0.17);
+    band.addColorStop(0, "rgba(150,170,210,0)");
+    band.addColorStop(0.5, "rgba(150,170,210,0.085)");
+    band.addColorStop(1, "rgba(150,170,210,0)");
+    g.fillStyle = band;
+    g.fillRect(-size.w, -size.h * 0.17, size.w * 2, size.h * 0.34);
+    g.restore();
+
+    // stars
+    for (var i = 0; i < 260; i++) {
+      var sxp = rand() * size.w;
+      var syp = rand() * size.h * 0.8;
+      var r = 0.35 + rand() * rand() * 1.5;
+      var alpha = 0.2 + rand() * 0.75;
+      var tint = rand();
+      g.globalAlpha = alpha;
+      g.fillStyle = tint > 0.93 ? "#ffd9b0" : (tint < 0.07 ? "#b7d4ff" : "#ffffff");
+      g.beginPath(); g.arc(sxp, syp, r, 0, 6.2832); g.fill();
+    }
+    // a few bright ones with a glint
+    for (var b2 = 0; b2 < 5; b2++) {
+      var bxp = rand() * size.w, byp = rand() * size.h * 0.62;
+      g.globalAlpha = 0.85;
+      g.fillStyle = "#ffffff";
+      g.beginPath(); g.arc(bxp, byp, 1.4, 0, 6.2832); g.fill();
+      g.globalAlpha = 0.3;
+      g.strokeStyle = "#ffffff"; g.lineWidth = 0.8;
+      g.beginPath();
+      g.moveTo(bxp - 4.5, byp); g.lineTo(bxp + 4.5, byp);
+      g.moveTo(bxp, byp - 4.5); g.lineTo(bxp, byp + 4.5);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+
+    drawEarth(g, proj, size);
+    drawRidges(g, c, proj, size);
+    drawSurface(g, c, proj, size);
+    drawPad(g, c, proj);
+
+  }
+
+  function drawVignette(ctx, size) {
+    var vig = ctx.createRadialGradient(
+      size.w * 0.5, size.h * 0.45, size.h * 0.25,
+      size.w * 0.5, size.h * 0.5, size.h * 0.95
+    );
+    vig.addColorStop(0, "rgba(0,0,0,0)");
+    vig.addColorStop(1, "rgba(0,0,0,0.42)");
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, size.w, size.h);
+  }
+
+  /* the craft's shadow on the regolith, tightening as it descends */
+  function drawShadow(ctx, f, proj, c, scale) {
+    var surf = terrainAt(c.ground, f.p[0]);
+    var alt = f.p[1] - surf;
+    if (alt < -0.2 || alt > 3) return;
+    var t = 1 - Math.max(0, alt) / 3;
+    var q = proj([f.p[0], surf]);
+    var w = (9 + 14 * t) * scale;
+    ctx.globalAlpha = 0.34 * t;
+    ctx.fillStyle = "#39434f";
+    ctx.beginPath(); ctx.ellipse(q[0], q[1], w, w * 0.28, 0, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawEarth(g, proj, size) {
+    var ctr = proj([16.9, 10.5]);
+    var rW = 1.15 * (proj([1, 0])[0] - proj([0, 0])[0]);
+    var rand = rng(5150);
+
+    // atmosphere
+    var halo = g.createRadialGradient(ctr[0], ctr[1], rW * 0.92, ctr[0], ctr[1], rW * 1.5);
+    halo.addColorStop(0, "rgba(90,160,235,0.30)");
+    halo.addColorStop(1, "rgba(90,160,235,0)");
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(ctr[0], ctr[1], rW * 1.5, 0, 6.2832); g.fill();
+
+    g.save();
+    g.beginPath(); g.arc(ctr[0], ctr[1], rW, 0, 6.2832); g.clip();
+
+    // ocean, lit from the upper left
+    var sea = g.createRadialGradient(
+      ctr[0] - rW * 0.4, ctr[1] - rW * 0.42, rW * 0.1,
+      ctr[0], ctr[1], rW * 1.1
+    );
+    sea.addColorStop(0, SCENE.earthOceanLit);
+    sea.addColorStop(1, SCENE.earthOcean);
+    g.fillStyle = sea;
+    g.fillRect(ctr[0] - rW, ctr[1] - rW, rW * 2, rW * 2);
+
+    // continents
+    for (var i = 0; i < 9; i++) {
+      var ang = rand() * 6.2832, dist = rand() * rW * 0.78;
+      var cx = ctr[0] + Math.cos(ang) * dist, cy = ctr[1] + Math.sin(ang) * dist;
+      g.globalAlpha = 0.78;
+      g.fillStyle = rand() > 0.68 ? SCENE.earthLandDry : SCENE.earthLand;
+      g.beginPath();
+      g.ellipse(cx, cy, rW * (0.14 + rand() * 0.26), rW * (0.1 + rand() * 0.2),
+                rand() * 3.14, 0, 6.2832);
+      g.fill();
+    }
+    // cloud bands
+    for (var j = 0; j < 5; j++) {
+      g.globalAlpha = 0.16 + rand() * 0.14;
+      g.fillStyle = SCENE.earthCloud;
+      g.beginPath();
+      g.ellipse(ctr[0] + (rand() - 0.5) * rW * 1.3, ctr[1] + (rand() - 0.5) * rW * 1.4,
+                rW * (0.3 + rand() * 0.4), rW * 0.09, rand() * 1.2, 0, 6.2832);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+
+    // terminator
+    var term = g.createLinearGradient(
+      ctr[0] - rW * 0.7, ctr[1] - rW * 0.7, ctr[0] + rW, ctr[1] + rW
+    );
+    term.addColorStop(0, "rgba(0,0,0,0)");
+    term.addColorStop(0.52, "rgba(0,0,0,0.12)");
+    term.addColorStop(1, "rgba(0,0,0,0.88)");
+    g.fillStyle = term;
+    g.fillRect(ctr[0] - rW, ctr[1] - rW, rW * 2, rW * 2);
+    g.restore();
+  }
+
+  function drawRidges(g, c, proj, size) {
+    [[0.62, 1.9, SCENE.ridgeFar], [0.8, 0.9, SCENE.ridgeNear]].forEach(function (layer) {
+      var squash = layer[0], lift = layer[1], color = layer[2];
+      g.fillStyle = color;
+      g.beginPath();
+      var first = proj([c.ground[0][0], c.ground[0][1] * squash + lift]);
+      g.moveTo(0, first[1]);
+      c.ground.forEach(function (p) {
+        var q = proj([p[0], p[1] * squash + lift]);
+        g.lineTo(q[0], q[1]);
+      });
+      var lastR = c.ground[c.ground.length - 1];
+      g.lineTo(size.w, proj([lastR[0], lastR[1] * squash + lift])[1]);
+      g.lineTo(size.w, size.h); g.lineTo(0, size.h);
+      g.closePath(); g.fill();
+    });
+  }
+
+  function drawSurface(g, c, proj, size) {
+    var rand = rng(314159);
+
+    g.save();
+    g.beginPath();
+    var g0 = proj(c.ground[0]);
+    g.moveTo(0, g0[1]);
+    c.ground.forEach(function (p) { var q = proj(p); g.lineTo(q[0], q[1]); });
+    g.lineTo(size.w, proj(c.ground[c.ground.length - 1])[1]);
+    g.lineTo(size.w, size.h); g.lineTo(0, size.h);
+    g.closePath();
+
+    var soil = g.createLinearGradient(0, proj([0, 2.2])[1], 0, size.h);
+    soil.addColorStop(0, SCENE.regolith);
+    soil.addColorStop(0.45, SCENE.regolithMid);
+    soil.addColorStop(1, SCENE.regolithFoot);
+    g.fillStyle = soil;
+    g.fill();
+    g.clip();   // craters and rubble stay in the ground
+
+    // craters, each a shadowed bowl with a sunlit rim
+    for (var i = 0; i < 26; i++) {
+      var wx = rand() * data.world[0];
+      var surf = terrainAt(c.ground, wx);
+      var depth = rand() * 1.5;
+      var q = proj([wx, surf - depth]);
+      var rr = (3 + rand() * 20) * ((proj([1, 0])[0] - proj([0, 0])[0]) / 30);
+      g.globalAlpha = 0.28 + rand() * 0.22;
+      g.fillStyle = SCENE.regolithDeep;
+      g.beginPath(); g.ellipse(q[0], q[1], rr, rr * 0.42, 0, 0, 6.2832); g.fill();
+      g.globalAlpha = 0.5;
+      g.strokeStyle = SCENE.litEdge;
+      g.lineWidth = 1;
+      g.beginPath(); g.ellipse(q[0], q[1], rr, rr * 0.42, 0, 3.34, 6.08); g.stroke();
+      g.globalAlpha = 1;
+    }
+    // scattered rubble
+    for (var j = 0; j < 40; j++) {
+      var rxw = rand() * data.world[0];
+      var rq = proj([rxw, terrainAt(c.ground, rxw) - rand() * 1.1]);
+      g.globalAlpha = 0.3 + rand() * 0.3;
+      g.fillStyle = SCENE.regolithFoot;
+      g.beginPath();
+      g.ellipse(rq[0], rq[1], 0.8 + rand() * 2.2, 0.6 + rand() * 1.2, 0, 0, 6.2832);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+    g.restore();
+
+    // sunlit lip along the horizon line
+    g.strokeStyle = SCENE.litEdge;
+    g.globalAlpha = 0.75;
+    g.lineWidth = 1.4;
+    g.beginPath();
+    var g0 = proj(c.ground[0]);
+    g.moveTo(0, g0[1]);
+    c.ground.forEach(function (p) { var q = proj(p); g.lineTo(q[0], q[1]); });
+    g.lineTo(size.w, proj(c.ground[c.ground.length - 1])[1]);
+    g.stroke();
+    g.globalAlpha = 1;
+  }
+
+  function drawPad(g, c, proj) {
+    var padY = c.pad[2];
+    var a = proj([c.pad[0], padY]), b = proj([c.pad[1], padY]);
+
+    // deck
+    g.fillStyle = "#49525e";
+    g.fillRect(a[0], a[1] - 3, b[0] - a[0], 6);
+    g.fillStyle = "#6f7a88";
+    g.fillRect(a[0], a[1] - 3, b[0] - a[0], 2);
+
+    // hash marks
+    g.strokeStyle = "rgba(255,255,255,0.3)";
+    g.lineWidth = 1;
+    for (var x = a[0] + 6; x < b[0] - 2; x += 11) {
+      g.beginPath(); g.moveTo(x, a[1] - 2); g.lineTo(x + 4, a[1] + 2); g.stroke();
+    }
+
+    // flags
+    [a, b].forEach(function (q, i) {
+      g.fillStyle = "#c8d0d8";
+      g.fillRect(q[0] - 0.75, q[1] - 30, 1.5, 30);
+      var wave = i === 0 ? 1 : -1;
+      g.fillStyle = "#e6a23c";
+      g.beginPath();
+      g.moveTo(q[0] + wave * 0.5, q[1] - 30);
+      g.quadraticCurveTo(q[0] + wave * 9, q[1] - 28.5, q[0] + wave * 15, q[1] - 24.5);
+      g.quadraticCurveTo(q[0] + wave * 8, q[1] - 22.5, q[0] + wave * 0.5, q[1] - 20);
+      g.closePath(); g.fill();
+      g.fillStyle = "rgba(0,0,0,0.18)";
+      g.beginPath();
+      g.moveTo(q[0] + wave * 0.5, q[1] - 25.5);
+      g.quadraticCurveTo(q[0] + wave * 8, q[1] - 24, q[0] + wave * 15, q[1] - 24.5);
+      g.quadraticCurveTo(q[0] + wave * 8, q[1] - 22.5, q[0] + wave * 0.5, q[1] - 20);
+      g.closePath(); g.fill();
+    });
+  }
+
+  /* ---------- the craft ---------- */
+  var CRAFT_SIZE = 1.45;   // drawn a touch larger than the collision hull
+
+  /* Each landing leg's hinge angle, read off the physics bodies, so the 3D
+     model articulates with the simulation instead of guessing at it. */
+  function legAnglesOf(f) {
+    var cos = Math.cos(-f.t), sin = Math.sin(-f.t);
+    return f.g.map(function (leg) {
+      var far = leg.slice().sort(function (p, q) {
+        return Math.hypot(q[0] - f.p[0], q[1] - f.p[1]) -
+               Math.hypot(p[0] - f.p[0], p[1] - f.p[1]);
+      }).slice(0, 2);
+      var mx = (far[0][0] + far[1][0]) / 2 - f.p[0];
+      var my = (far[0][1] + far[1][1]) / 2 - f.p[1];
+      return Math.atan2(mx * cos - my * sin, -(mx * sin + my * cos));
+    });
+  }
+
+  function drawLander(ctx, f, proj, ghostOnly) {
+    if (ghostOnly) {
+      // the comparison run stays a flat outline, so it reads as a ghost
+      ctx.strokeStyle = css("--muted");
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 3]);
+      poly(ctx, f.l, proj); ctx.stroke();
+      f.g.forEach(function (leg) { poly(ctx, leg, proj); ctx.stroke(); });
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      return;
+    }
+    var origin = proj([f.p[0], f.p[1]]);
+    var perWorldUnit = proj([1, 0])[0] - proj([0, 0])[0];
+    Craft3D.draw(ctx, {
+      x: origin[0], y: origin[1],
+      scale: perWorldUnit,
+      roll: f.t,
+      legAngles: legAnglesOf(f),
+      size: CRAFT_SIZE
+    });
+  }
+
+  /* ---------- exhaust and dust ---------- */
+  function drawExhaust(ctx, f, proj, c, frameNo) {
+    if (f.a === 0) return;
+    var fr = bodyFrame(f);
+    var P = function (x, y) { return proj(local(fr, x, y)); };
+    var jitter = 0.74 + 0.26 * Math.sin(frameNo * 2.1) * Math.cos(frameNo * 0.7);
+
+    function plume(bx, by, dx, dy, length, width) {
+      var base = P(bx, by);
+      var tip = P(bx + dx * length, by + dy * length);
+      var nx = -dy, ny = dx;
+      var l0 = P(bx + nx * width, by + ny * width);
+      var l1 = P(bx - nx * width, by - ny * width);
+
+      var glow = ctx.createRadialGradient(base[0], base[1], 0, base[0], base[1], 18);
+      glow.addColorStop(0, "rgba(255,170,80,0.5)");
+      glow.addColorStop(1, "rgba(255,170,80,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(base[0], base[1], 18, 0, 6.2832); ctx.fill();
+
+      [[1, SCENE.flame, 0.75], [0.66, SCENE.flameHot, 0.9], [0.34, SCENE.flameCore, 1]]
+        .forEach(function (layer) {
+          var scale = layer[0];
+          var t = P(bx + dx * length * scale, by + dy * length * scale);
+          var a0 = P(bx + nx * width * scale, by + ny * width * scale);
+          var a1 = P(bx - nx * width * scale, by - ny * width * scale);
+          ctx.globalAlpha = layer[2];
+          var grd = ctx.createLinearGradient(base[0], base[1], t[0], t[1]);
+          grd.addColorStop(0, layer[1]);
+          grd.addColorStop(1, "rgba(255,120,30,0)");
+          ctx.fillStyle = grd;
+          ctx.beginPath();
+          ctx.moveTo(a0[0], a0[1]); ctx.lineTo(t[0], t[1]); ctx.lineTo(a1[0], a1[1]);
+          ctx.closePath(); ctx.fill();
+        });
+      ctx.globalAlpha = 1;
+
+      // sparks
+      var r = rng(frameNo * 31 + Math.round(bx * 100));
+      for (var i = 0; i < 5; i++) {
+        var t2 = 0.3 + r() * 0.8;
+        var spread = (r() - 0.5) * width * 2.4;
+        var q = P(bx + dx * length * t2 + nx * spread, by + dy * length * t2 + ny * spread);
+        ctx.globalAlpha = 0.5 * (1 - t2 / 1.1);
+        ctx.fillStyle = SCENE.flameHot;
+        ctx.beginPath(); ctx.arc(q[0], q[1], 0.9, 0, 6.2832); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      return tip;
+    }
+
+    if (f.a === 2) plume(0, -0.86, 0, -1, 1.3 * jitter, 0.2);
+    if (f.a === 1) plume(-0.7, 0.22, -1, 0, 0.55 * jitter, 0.1);
+    if (f.a === 3) plume(0.7, 0.22, 1, 0, 0.55 * jitter, 0.1);
+
+    // regolith kicked up when the main engine fires close to the surface
+    if (f.a === 2) {
+      var cx = fr.ox, surf = terrainAt(c.ground, cx);
+      var alt = fr.oy - surf;
+      if (alt < 1.5 && alt > -0.2) {
+        var strength = 1 - alt / 1.5;
+        var rr = rng(frameNo * 17);
+        for (var d = 0; d < 9; d++) {
+          var side = rr() < 0.5 ? -1 : 1;
+          var spreadX = side * (0.1 + rr() * 1.5) * strength;
+          var q = proj([cx + spreadX, surf + rr() * 0.22]);
+          ctx.globalAlpha = 0.1 + 0.26 * strength * (1 - Math.abs(spreadX) / 1.7);
+          ctx.fillStyle = SCENE.dust;
+          ctx.beginPath();
+          ctx.ellipse(q[0], q[1], 5 + rr() * 16 * strength, 2 + rr() * 5 * strength,
+                      0, 0, 6.2832);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  /* ---------- one painter, any canvas ---------- */
+  function paint(view, c, idx, opts) {
+    opts = opts || {};
+    var size = view.size;
+    var i = Math.max(0, Math.min(idx, c.frames.length - 1));
+    var f = c.frames[i];
+    var scale = opts.zoom || 1;
+    var ctx = view.ctx;
+
+    buildBackground(view, c, size, scale);
+    var cam = camera(size, f, scale);
+    var proj = projector(size, cam);
+
+    ctx.clearRect(0, 0, size.w, size.h);
+    // blit just the camera's window out of the world-sized scenery
+    var bd = view.bg.width / (size.w * scale);
+    ctx.drawImage(
+      view.bg,
+      cam.ox * bd, cam.oy * bd, size.w * bd, size.h * bd,
+      0, 0, size.w, size.h
+    );
+
+    if (opts.trail !== false) {
+      // flight path so far: a flat trail is the tell
+      ctx.strokeStyle = css("--craft");
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      for (var k2 = 0; k2 <= i; k2 += 2) {
+        var ctr = proj(centroid(c.frames[k2].l));
+        if (k2 === 0) ctx.moveTo(ctr[0], ctr[1]); else ctx.lineTo(ctr[0], ctr[1]);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    if (opts.ghostClip) {
+      var gfs = opts.ghostClip.frames;
+      drawLander(ctx, gfs[Math.min(i, gfs.length - 1)], proj, true);
+    }
+
+    drawShadow(ctx, f, proj, c, scale);
+    drawExhaust(ctx, f, proj, c, i);
+    drawLander(ctx, f, proj, false);
+    if (opts.vignette !== false) drawVignette(ctx, size);
+    return f;
+  }
+
+  function render() {
+    var c = clip();
+    var f = paint(consoleView, c, frame, {
+      zoom: zoom ? 2 : 1,
+      ghostClip: (mode === "replay" && ghost && key !== "baseline")
+        ? data.clips.baseline : null
+    });
+
+    if (mode === "replay") {
+      document.getElementById("frame-read").textContent = frame + " / " + (nFrames() - 1);
+      document.getElementById("scrub").value = String(frame);
+    } else {
+      document.getElementById("fly-read").textContent = sim.steps + " / " + SIM_MAX_FRAMES;
+    }
+    updateReadouts(f);
+  }
+
+
+  /* ---------- readouts ---------- */
+  function fmt(n, d) {
+    var s = n.toFixed(d === undefined ? 2 : d);
+    return (n >= 0 ? " " : "") + s;
+  }
+
+  function updateReadouts(f) {
+    rows.forEach(function (r) {
+      var v = f.o[r.spec.key];
+      if (r.spec.flag) {
+        var on = v > 0.5;
+        r.pill.classList.toggle("on", on);
+        r.pill.textContent = on ? "DOWN" : "UP";
+      } else {
+        r.val.textContent = fmt(v);
+        var range = r.spec.range;
+        var frac = Math.max(-1, Math.min(1, v / range));
+        if (r.spec.center) {
+          var half = Math.abs(frac) * 50;
+          r.fill.style.left = (frac >= 0 ? 50 : 50 - half) + "%";
+          r.fill.style.width = half + "%";
+        } else {
+          r.fill.style.left = "0%";
+          r.fill.style.width = Math.max(0, Math.min(1, v / range)) * 100 + "%";
+        }
+      }
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll(".jet"), function (j) {
+      j.classList.toggle("lit", Number(j.dataset.a) === f.a);
+    });
+
+    var gap = f.sr - f.br;
+    document.getElementById("v-true").textContent = Math.round(f.br);
+    document.getElementById("v-paid").textContent = Math.round(f.sr);
+    document.getElementById("v-gap").textContent =
+      (gap >= 0 ? "+" : "") + Math.round(gap);
+    document.getElementById("gap-row").classList.toggle("hot", Math.abs(gap) >= 100);
+  }
+
+  /* ---------- divergence chart ---------- */
+  function drawChart() {
+    var size = fit(chart, 190);
+    var c = clip(), fs = c.frames;
+    var pad = { l: 46, r: 54, t: 14, b: 22 };
+    var w = size.w - pad.l - pad.r, h = size.h - pad.t - pad.b;
+
+    cctx.clearRect(0, 0, size.w, size.h);
+
+    var lo = 0, hi = 0;
+    fs.forEach(function (f) {
+      lo = Math.min(lo, f.br, f.sr); hi = Math.max(hi, f.br, f.sr);
+    });
+    var span = (hi - lo) || 1;
+    lo -= span * 0.08; hi += span * 0.08;
+
+    var axis = Math.max(1, (c.axisFrames || fs.length) - 1);
+    var X = function (i) { return pad.l + (i / axis) * w; };
+    var Y = function (v) { return pad.t + h - ((v - lo) / (hi - lo)) * h; };
+
+    // grid + axis labels
+    cctx.strokeStyle = css("--line");
+    cctx.fillStyle = css("--faint");
+    cctx.font = '11px ' + css("--mono").split(",")[0].replace(/"/g, "") + ", monospace";
+    cctx.lineWidth = 1;
+    cctx.textAlign = "right";
+    cctx.textBaseline = "middle";
+    [hi, (hi + lo) / 2, lo].forEach(function (v) {
+      var y = Y(v);
+      cctx.globalAlpha = 0.45;
+      cctx.beginPath(); cctx.moveTo(pad.l, y); cctx.lineTo(pad.l + w, y); cctx.stroke();
+      cctx.globalAlpha = 1;
+      cctx.fillText(Math.round(v), pad.l - 7, y);
+    });
+    if (lo < 0 && hi > 0) {
+      cctx.strokeStyle = css("--muted");
+      cctx.globalAlpha = 0.5;
+      cctx.beginPath(); cctx.moveTo(pad.l, Y(0)); cctx.lineTo(pad.l + w, Y(0)); cctx.stroke();
+      cctx.globalAlpha = 1;
+    }
+
+    cctx.textAlign = "center";
+    cctx.fillStyle = css("--faint");
+    cctx.fillText("0", pad.l, size.h - 8);
+    cctx.fillText(String(axis) + " frames", pad.l + w, size.h - 8);
+    if (axis + 1 >= 1000) {
+      cctx.fillStyle = css("--alarm");
+      cctx.textAlign = "right";   // clear of the end-of-series labels
+      cctx.fillText("cutoff", pad.l + w - 4, pad.t + 6);
+      cctx.textAlign = "center";
+    }
+
+    function series(get, color) {
+      cctx.strokeStyle = color;
+      cctx.lineWidth = 2;
+      cctx.beginPath();
+      fs.forEach(function (f, i) {
+        var x = X(i), y = Y(get(f));
+        if (i === 0) cctx.moveTo(x, y); else cctx.lineTo(x, y);
+      });
+      cctx.stroke();
+    }
+    series(function (f) { return f.sr; }, css("--paid"));
+    series(function (f) { return f.br; }, css("--true"));
+
+    // end labels
+    var last = fs[fs.length - 1];
+    cctx.textAlign = "left";
+    var endX = X(fs.length - 1) + 7;
+    cctx.fillStyle = css("--paid");
+    cctx.fillText(Math.round(c.shapedReturn), endX, Y(last.sr));
+    cctx.fillStyle = css("--true");
+    cctx.fillText(Math.round(c.trueReturn), endX, Y(last.br));
+
+    // playhead
+    var px = X(Math.min(frame, fs.length - 1));
+    cctx.strokeStyle = css("--fg");
+    cctx.globalAlpha = 0.35;
+    cctx.lineWidth = 1;
+    cctx.beginPath(); cctx.moveTo(px, pad.t); cctx.lineTo(px, pad.t + h); cctx.stroke();
+    cctx.globalAlpha = 1;
+  }
+
+  /* ---------- scroll-scrubbed scenes ---------- */
+  var BEATS = {
+    "scene-descent": [
+      ["01 \u2014 The descent", "Eight numbers.",
+       "It never sees the picture. Position relative to the pad, velocity, tilt, spin, and a contact flag per leg \u2014 fifty times a second."],
+      ["02 \u2014 The descent", "Four buttons.",
+       "Nothing, left engine, main engine, right engine. One choice per frame. The main engine costs 0.30 a frame, the side engines 0.03."],
+      ["03 \u2014 The descent", "Legs down.",
+       "Ten points for each leg that touches. The lander has to arrive slow, level and between the flags."],
+      ["04 \u2014 The descent", "At rest. Plus a hundred.",
+       "The lander falls asleep, the episode ends, and the scoring stops with it. Hold on to that last part."]
+    ],
+    "scene-trap": [
+      ["01 \u2014 The trap", "One extra rule.",
+       "Plus three a frame for being upright and slow. It sounds like precisely what you want from a lander."],
+      ["02 \u2014 The trap", "It stops descending.",
+       "Level, almost stationary, collecting three points a frame and paying 0.30 of it back in fuel."],
+      ["03 \u2014 The trap", "Six hundred frames in.",
+       "Still there. Landing would end the episode, and ending the episode would stop the payments."],
+      ["04 \u2014 The trap", "Cutoff.",
+       "Paid 2,799. Actually flown: minus 87. Nothing went wrong \u2014 it did exactly what we paid it for."]
+    ]
+  };
+
+  var heroView = null, scenes = [], cmpViews = [];
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function inView(el, pad) {
+    var r = el.getBoundingClientRect();
+    return r.bottom > -(pad || 0) && r.top < window.innerHeight + (pad || 0);
+  }
+
+  function initScenes() {
+    heroView = makeView(document.getElementById("hero-canvas"));
+    Array.prototype.forEach.call(document.querySelectorAll(".scene"), function (el) {
+      scenes.push({
+        el: el,
+        track: el.querySelector(".scene-track"),
+        stage: el.querySelector(".scene-stage"),
+        view: makeView(el.querySelector(".scene-canvas")),
+        clipKey: el.dataset.clip,
+        beats: BEATS[el.id] || [],
+        kicker: el.querySelector(".beat-kicker"),
+        title: el.querySelector(".beat-title"),
+        body: el.querySelector(".beat-body"),
+        bar: el.querySelector(".scene-progress i"),
+        cTrue: el.querySelector('[data-cnt="true"]'),
+        cPaid: el.querySelector('[data-cnt="paid"]'),
+        last: -1, lastBeat: -1
+      });
+    });
+    [["cmp-a", "baseline", "cmp-a-score"], ["cmp-b", "hacked", "cmp-b-score"]]
+      .forEach(function (t) {
+        cmpViews.push({
+          view: makeView(document.getElementById(t[0])),
+          key: t[1],
+          label: document.getElementById(t[2])
+        });
+      });
+  }
+
+  function fitAll() {
+    [heroView].concat(scenes.map(function (s2) { return s2.view; }),
+                      cmpViews.map(function (c) { return c.view; }))
+      .forEach(function (v) { v.size = fit(v.canvas); v.bgKey = ""; });
+    scenes.forEach(function (s2) { s2.last = -1; });
+  }
+
+  function setBeat(sc, i) {
+    var b = sc.beats[i];
+    if (!b) return;
+    sc.kicker.textContent = b[0];
+    sc.title.textContent = b[1];
+    sc.body.textContent = b[2];
+    if (!reduceMotion) {
+      [sc.kicker, sc.title, sc.body].forEach(function (el) {
+        el.classList.remove("beat-swap");
+        void el.offsetWidth;          // restart the animation
+        el.classList.add("beat-swap");
+      });
+    }
+  }
+
+  function updateScenes() {
+    scenes.forEach(function (sc) {
+      if (!inView(sc.track, 300)) return;
+      var r = sc.track.getBoundingClientRect();
+      var span = r.height - (sc.stage.offsetHeight || window.innerHeight);
+      var p = span > 0 ? Math.max(0, Math.min(1, -r.top / span)) : 0;
+      sc.bar.style.transform = "scaleX(" + p.toFixed(4) + ")";
+
+      var bi = Math.max(0, Math.min(sc.beats.length - 1, Math.floor(p * sc.beats.length)));
+      if (bi !== sc.lastBeat) { setBeat(sc, bi); sc.lastBeat = bi; }
+
+      var c = data.clips[sc.clipKey];
+      var idx = Math.round(p * (c.frames.length - 1));
+      if (idx === sc.last) return;
+      sc.last = idx;
+      var f = paint(sc.view, c, idx, { zoom: 1.5 });
+      if (sc.cTrue) {
+        sc.cTrue.textContent = Math.round(f.br);
+        sc.cPaid.textContent = Math.round(f.sr);
+      }
+    });
+  }
+
+  /* The hero and the comparison strip loop on their own, but only while they
+     are actually on screen. */
+  var HERO_FROM = 55;              // the craft is above frame before this
+  var heroFrame = HERO_FROM, cmpFrame = 0, ambAcc = 0;
+  var CMP_LOOP = 420;
+
+  function ambient(dt) {
+    var heroUp = inView(heroView.canvas, 120);
+    var cmpUp = inView(cmpViews[0].view.canvas, 120);
+    if (!heroUp && !cmpUp) return;
+
+    if (!reduceMotion) {
+      ambAcc += dt;
+      var step = 1000 / data.fps;
+      while (ambAcc >= step) { ambAcc -= step; heroFrame++; cmpFrame++; }
+    }
+    var hb = data.clips.baseline;
+    if (heroFrame >= hb.frames.length + 40) heroFrame = HERO_FROM;
+    if (cmpFrame >= CMP_LOOP) cmpFrame = 0;
+
+    if (heroUp) paint(heroView, hb, Math.min(heroFrame, hb.frames.length - 1), { zoom: 1.7 });
+    if (cmpUp) {
+      cmpViews.forEach(function (cv) {
+        var c = data.clips[cv.key];
+        var i = Math.min(cmpFrame, c.frames.length - 1);
+        var f = paint(cv.view, c, i, { zoom: 1.25 });
+        cv.label.textContent = "true " + Math.round(f.br) + "  \u00b7  paid " + Math.round(f.sr);
+      });
+    }
+  }
+
+  /* ---------- hand flying ---------- */
+  function currentAction() {
+    // The environment allows exactly one action per frame, so holding two
+    // keys does not fire two engines: main wins, then left, then right.
+    if (held.main) return 2;
+    if (held.left) return 1;
+    if (held.right) return 3;
+    return 0;
+  }
+
+  function startFlight() {
+    var base = data.clips.baseline;
+    sim = new LunarSim(base.ground, base.pad);
+    flyClip = {
+      ground: base.ground,
+      pad: base.pad,
+      frames: [sim.frameData(0)],
+      trueReturn: 0,
+      shapedReturn: 0,
+      axisFrames: SIM_MAX_FRAMES,
+      label: "You",
+      blurb: SIM_REWARDS[rewardKey].label,
+      outcome: null
+    };
+    frame = 0;
+    acc = 0;
+    flying = true;
+    held.main = held.left = held.right = false;
+    document.getElementById("result").hidden = true;
+    document.getElementById("flag").hidden = true;
+    document.getElementById("stage-note").textContent =
+      "You are flying. Paid by: " + SIM_REWARDS[rewardKey].label;
+    resize();
+    render();
+    drawChart();
+  }
+
+  function endFlight() {
+    flying = false;
+    var out = sim.outcome() || "ended";
+    flyClip.outcome = out;
+    var agent = data.clips[AGENT_FOR[rewardKey]];
+
+    var head = document.getElementById("result-outcome");
+    head.textContent = out === "landed" ? "Landed."
+      : (out === "crashed" ? "Crashed." : "Never landed.");
+    head.className = "result-outcome " + (out === "landed" ? "good" : "bad");
+
+    document.getElementById("result-true").textContent = Math.round(sim.trueReturn);
+    document.getElementById("result-paid").textContent = Math.round(sim.paidReturn);
+    document.getElementById("result-agent").textContent =
+      agent ? Math.round(agent.trueReturn) : "\u2014";
+    document.getElementById("result-agent-label").textContent =
+      "PPO on this reward, true score";
+    document.getElementById("result").hidden = false;
+  }
+
+  function paintJets() {
+    var a = currentAction();
+    [1, 2, 3].forEach(function (n) {
+      document.getElementById("jet-" + n).classList.toggle("lit", a === n);
+    });
+  }
+
+  function onKey(down) {
+    return function (e) {
+      if (mode !== "fly") return;
+      var k = e.key, hit = true;
+      if (k === "ArrowUp" || k === "w" || k === "W" || k === " ") held.main = down;
+      else if (k === "ArrowLeft" || k === "a" || k === "A") held.left = down;
+      else if (k === "ArrowRight" || k === "d" || k === "D") held.right = down;
+      else if ((k === "r" || k === "R") && down) startFlight();
+      else hit = false;
+      if (hit) { e.preventDefault(); paintJets(); }
+    };
+  }
+  window.addEventListener("keydown", onKey(true));
+  window.addEventListener("keyup", onKey(false));
+
+  // on-screen engines, so this works without a keyboard
+  [1, 2, 3].forEach(function (n) {
+    var btn = document.getElementById("jet-" + n);
+    var slot = n === 2 ? "main" : (n === 1 ? "left" : "right");
+    function set(v) { return function (e) { e.preventDefault(); held[slot] = v; paintJets(); }; }
+    btn.addEventListener("pointerdown", set(true));
+    btn.addEventListener("pointerup", set(false));
+    btn.addEventListener("pointerleave", set(false));
+    btn.addEventListener("pointercancel", set(false));
+  });
+
+  document.getElementById("restart").addEventListener("click", startFlight);
+  document.getElementById("result-again").addEventListener("click", startFlight);
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("mode-replay").setAttribute("aria-selected", String(m === "replay"));
+    document.getElementById("mode-fly").setAttribute("aria-selected", String(m === "fly"));
+    document.getElementById("replay-controls").hidden = (m === "fly");
+    document.getElementById("fly-controls").hidden = (m !== "fly");
+    document.getElementById("hint").hidden = (m !== "fly");
+    document.getElementById("chips-label").textContent =
+      m === "fly" ? "What you are paid for" : "The four agents";
+    document.getElementById("clips").setAttribute(
+      "aria-label", m === "fly" ? "Reward function paying you" : "Agent");
+    buildClips();
+    if (m === "fly") {
+      playing = false;
+      document.getElementById("ghost-wrap").hidden = true;
+      startFlight();
+    } else {
+      document.getElementById("result").hidden = true;
+      select(key);
+    }
+  }
+  document.getElementById("mode-replay").addEventListener("click", function () { setMode("replay"); });
+  document.getElementById("mode-fly").addEventListener("click", function () { setMode("fly"); });
+
+  /* ---------- transport ---------- */
+  var playBtn = document.getElementById("play");
+  playBtn.addEventListener("click", function () {
+    playing = !playing;
+    if (playing && frame >= nFrames() - 1) frame = 0;
+    playBtn.textContent = playing ? "Pause" : "Play";
+  });
+  document.getElementById("scrub").addEventListener("input", function (e) {
+    frame = Number(e.target.value);
+    playing = false;
+    playBtn.textContent = "Play";
+    render(); drawChart();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".speed"), function (b) {
+    b.addEventListener("click", function () {
+      speed = Number(b.dataset.speed);
+      Array.prototype.forEach.call(document.querySelectorAll(".speed"), function (o) {
+        o.setAttribute("aria-pressed", String(o === b));
+      });
+    });
+  });
+  document.getElementById("ghost").addEventListener("change", function (e) {
+    ghost = e.target.checked; render();
+  });
+  document.getElementById("zoom").addEventListener("click", function () {
+    zoom = !zoom;
+    this.setAttribute("aria-pressed", String(zoom));
+    render();
+  });
+  window.addEventListener("resize", function () { resize(); render(); });
+
+  /* ---------- clock ---------- */
+  var acc = 0, prev = 0;
+  function tick(t) {
+    if (!prev) prev = t;
+    var dt = Math.min(t - prev, 120);
+    prev = t;
+    if (data) { updateScenes(); ambient(dt); }
+
+    if (data && mode === "fly") {
+      if (flying) {
+        acc += dt;                       // always real time, never the replay speed
+        var fstep = 1000 / data.fps;
+        while (acc >= fstep && flying) {
+          acc -= fstep;
+          var a = currentAction();
+          sim.step(a, rewardKey);
+          flyClip.frames.push(sim.frameData(a));
+          flyClip.trueReturn = sim.trueReturn;
+          flyClip.shapedReturn = sim.paidReturn;
+          frame = flyClip.frames.length - 1;
+          if (sim.terminated || sim.truncated) endFlight();
+        }
+      }
+      render();
+      drawChart();
+    } else if (data && playing) {
+      acc += dt * speed;
+      var step = 1000 / data.fps;
+      while (acc >= step) {
+        acc -= step;
+        frame++;
+        if (frame >= nFrames()) { frame = 0; }
+      }
+      render();
+      drawChart();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ---------- boot ---------- */
+  // revalidate: a republished data file must never be served from cache
+  fetch("trajectories.json", { cache: "no-cache" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function (d) {
+      data = d;
+      document.getElementById("loading").hidden = true;
+      view.hidden = false;
+      initScenes();
+      fitAll();
+      buildClips();
+      if (reduceMotion) playing = false;
+      playBtn.textContent = playing ? "Pause" : "Play";
+      select("baseline");
+      requestAnimationFrame(tick);
+    })
+    .catch(function (err) {
+      document.getElementById("loading").textContent =
+        "Could not load the flight data (" + err.message + ").";
+    });
+})();
+</script>

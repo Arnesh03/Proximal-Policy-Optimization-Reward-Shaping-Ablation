@@ -1,0 +1,10 @@
+{
+  "name": "baseline",
+  "reward": "baseline",
+  "wrapper_kwargs": {},
+  "steps": 1000000,
+  "seed": 0,
+  "n_envs": 16,
+  "wall_clock_seconds": 620.0,
+  "model": "models/baseline.zip"
+}
