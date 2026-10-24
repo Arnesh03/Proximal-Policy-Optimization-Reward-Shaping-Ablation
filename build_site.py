@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -79,11 +80,30 @@ def build(out: Path) -> None:
     (UI / "_local.html").write_text(page, encoding="utf-8")
 
 
+def package(out: Path, zip_path: Path) -> None:
+    """Zip the built site with index.html at the archive root.
+
+    That is the shape Netlify Drop and friends expect: drop the zip and it is
+    unpacked as the site, no folder level in between.
+    """
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+        for f in sorted(out.iterdir()):
+            if f.is_file() and f.name != ".DS_Store":
+                z.write(f, f.name)
+    print(f"  {zip_path.name}  ({zip_path.stat().st_size / 1024:.0f} KB) "
+          f"\u2014 drag this onto app.netlify.com/drop")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out", default="docs", help="output directory (default: docs)")
+    p.add_argument("--zip", action="store_true",
+                   help="also write lunar-lander-site.zip for drag-and-drop hosts")
     args = p.parse_args()
-    build(ROOT / args.out)
+    out = ROOT / args.out
+    build(out)
+    if args.zip:
+        package(out, ROOT / "lunar-lander-site.zip")
 
 
 if __name__ == "__main__":

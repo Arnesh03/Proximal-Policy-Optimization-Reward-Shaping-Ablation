@@ -25,7 +25,7 @@ exactly what you pay it for**, which is rarely exactly what you meant.
 | [`ui/index.html`](ui/index.html) | Replay console + hand-flying mode |
 | [`ui/sim.js`](ui/sim.js) | LunarLander-v3 ported to the browser, for flying it yourself |
 | [`ui/craft3d.js`](ui/craft3d.js) | Shaded 3D lunar module with quilted insulation, greebling and LOD |
-| [`ui/build_local.py`](ui/build_local.py) | Wraps the page the way the host does, for honest local testing |
+| [`build_site.py`](build_site.py) | Builds `docs/`, the deployable static site |
 
 ## Setup
 
@@ -235,6 +235,27 @@ n=12 it had looked like a real discrepancy, which is its own small lesson about
 reading one number. A score you earn by hand is therefore directly comparable
 to the agents' scores, which is why the end-of-flight card shows both.
 
+
+## Hosting it
+
+The page in `ui/` is written for an Artifact host, which wraps it in a document
+skeleton at publish time. Anywhere else it needs that skeleton itself, or the
+browser drops into quirks mode with no charset. `build_site.py` adds it:
+
+```bash
+python build_site.py --zip
+```
+
+That writes `docs/` (776 KB, four files and a `.nojekyll`) and
+`lunar-lander-site.zip` with `index.html` at the archive root. It is a plain
+static site with no build step — nothing to install, nothing to run server-side.
+
+- **Netlify Drop** — drag the zip onto [app.netlify.com/drop](https://app.netlify.com/drop).
+  No account needed; sign in afterwards to keep the URL.
+- **GitHub Pages** — push the repo, then Settings → Pages → `main` / `docs`.
+- **Vercel / Cloudflare Pages** — point the publish directory at `docs`, no build command.
+
+To update a deployed copy, re-run the command above and drop the new zip.
 
 ## Pitfalls I hit (and the ones I didn't)
 
