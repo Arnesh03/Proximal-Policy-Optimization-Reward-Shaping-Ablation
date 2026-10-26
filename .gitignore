@@ -11,3 +11,6 @@ logs/*/best/
 logs/*.log
 
 .DS_Store
+
+# editor tooling
+.claude/
