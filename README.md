@@ -1,6 +1,7 @@
-# Paid to Hover
+# PPO Reward Shaping Ablation
 
-**A reinforcement learning agent that learned to hover forever — because that is exactly what I paid it for.**
+**Paid to hover: an agent that learned to hover forever, because that is
+exactly what I paid it for.**
 
 I trained PPO to land the Gymnasium lunar lander, then wrote a reward rule that
 sounds obviously correct, retrained, and watched the agent stop landing
