@@ -1,9 +1,9 @@
-# PPO Reward Shaping Ablation
+# Proximal Policy Optimization: Reward Shaping Ablation
 
 **Paid to hover: an agent that learned to hover forever, because that is
 exactly what I paid it for.**
 
-I trained PPO to land the Gymnasium lunar lander, then wrote a reward rule that
+I trained PPO (Proximal Policy Optimization) to land the Gymnasium lunar lander, then wrote a reward rule that
 sounds obviously correct, retrained, and watched the agent stop landing
 altogether. It scores **−102** while being **paid +684**. Then I fixed it.
 
