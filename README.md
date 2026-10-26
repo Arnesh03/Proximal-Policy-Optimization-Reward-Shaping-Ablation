@@ -11,8 +11,8 @@ altogether. It scores **−102** while being **paid +684**. Then I fixed it.
 *Top: the built-in reward. Bottom: `+3 a frame for being upright and slow`. Same
 game, same physics, same 1,000-frame budget.*
 
-**Live demo:** _add your Netlify URL here_ · Runs in the browser — scroll to
-scrub the real flight, or fly it yourself.
+**[▶ Live demo](https://subtle-zuccutto-36f4fe.netlify.app/)** · Runs in the
+browser — scroll to scrub the real flight, or fly it yourself.
 
 ---
 
